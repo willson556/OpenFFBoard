@@ -30,6 +30,7 @@
 #define ANALOGAXES
 #define TMC4671DRIVER
 #define LOCALENCODER
+#define DUMMYENCODER
 //#define PWMDRIVER // Not supported! No free timer
 //----------------------
 

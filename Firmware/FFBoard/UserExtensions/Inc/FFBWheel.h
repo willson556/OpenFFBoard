@@ -18,6 +18,7 @@
 #include "LocalButtons.h"
 #include "SPIButtons.h"
 #include "EncoderLocal.h"
+#include "EncoderDummy.h"
 #include "LocalAnalog.h"
 #include "AnalogSource.h"
 

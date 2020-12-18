@@ -65,6 +65,9 @@ std::vector<class_entry<Encoder>> encoder_sources =
 #ifdef LOCALENCODER
 		add_class<EncoderLocal,Encoder>(),
 #endif
+#ifdef DUMMYENCODER
+		add_class<EncoderDummy,Encoder>(),
+#endif
 };
 
 // TODO class type for parser? (Simhub for example)
