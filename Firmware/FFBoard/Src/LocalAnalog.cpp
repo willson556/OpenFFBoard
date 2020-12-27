@@ -17,6 +17,10 @@ ClassIdentifier LocalAnalog::info = {
 
 LocalAnalog::LocalAnalog() {
 	restoreFlash();
+
+	for (int i=0; i < numPins; ++i) {
+		filters[i].setGain(0.01f);
+	}
 }
 
 LocalAnalog::~LocalAnalog() {
@@ -46,18 +50,29 @@ void LocalAnalog::setAutorange(bool autorange){
 	this->aconf.autorange = autorange;
 }
 
-std::vector<int32_t>* LocalAnalog::getAxes(){
-	uint8_t chans = 0;
-	this->buf.clear();
-	volatile uint32_t* adcbuf = getAnalogBuffer(&AIN_HADC,&chans);
+void LocalAnalog::adcUpd(volatile uint32_t* ADC_BUF, uint8_t chans, ADC_HandleTypeDef* hadc){
+	if (hadc != &AIN_HADC) {
+		return;
+	}
 
-	uint8_t axes = MIN(chans-ADC_CHAN_FPIN,numPins);
-
-	for(uint8_t i = 0;i<axes;i++){
+	uint axes = MIN(chans-ADC_CHAN_FPIN,numPins);
+	for (uint i=0; i < axes; ++i){
 		if(!(aconf.analogmask & 0x01 << i))
 			continue;
 
-		int32_t val = ((adcbuf[i+ADC_CHAN_FPIN] & 0xFFF) << 4)-0x7fff;
+		int32_t val = ((ADC_BUF[i+ADC_CHAN_FPIN] & 0xFFF) << 4)-0x7fff;
+		filters[i].process(static_cast<float>(val));
+	}
+}
+
+std::vector<int32_t>* LocalAnalog::getAxes(){
+	this->buf.clear();
+
+	for(uint8_t i = 0;i<numPins;i++){
+		if(!(aconf.analogmask & 0x01 << i))
+			continue;
+
+		int32_t val = static_cast<int32_t>(filters[i].getOutput());
 
 		if(aconf.autorange){
 			minMaxVals[i].max = std::max(minMaxVals[i].max,val);

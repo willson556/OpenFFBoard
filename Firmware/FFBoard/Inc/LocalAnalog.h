@@ -7,11 +7,15 @@
 
 #ifndef SRC_LOCALANALOG_H_
 #define SRC_LOCALANALOG_H_
+
+#include <vector>
+#include <limits.h>
+
 #include "AnalogSource.h"
 #include "PersistentStorage.h"
 #include "CommandHandler.h"
-#include <vector>
-#include <limits.h>
+#include "AdcHandler.h"
+#include "Filters.h"
 
 struct MinMaxPair{
 	int32_t min = INT_MAX;
@@ -23,7 +27,7 @@ struct LocalAnalogConfig{
 	bool autorange = false;
 };
 
-class LocalAnalog : public AnalogSource, public CommandHandler{
+class LocalAnalog : public AnalogSource, public CommandHandler, public AdcHandler{
 public:
 	LocalAnalog();
 	virtual ~LocalAnalog();
@@ -40,13 +44,15 @@ public:
 	void setAutorange(bool autorange);
 	virtual std::string getHelpstring(){return "Analog pins: local_ain_mask,local_ain_num,local_ain_acal\n";}
 
+	void adcUpd(volatile uint32_t* ADC_BUF, uint8_t chans, ADC_HandleTypeDef* hadc) override;
+
 private:
 	bool autorange = false;
 	static LocalAnalogConfig decodeAnalogConfFromInt(uint16_t val);
 	static uint16_t encodeAnalogConfToInt(LocalAnalogConfig conf);
-	const uint8_t numPins = ADC_PINS;
-	MinMaxPair minMaxVals[ADC_PINS];
-
+	static constexpr uint8_t numPins{ADC_PINS};
+	MinMaxPair minMaxVals[numPins];
+	ExponentialFilter filters[numPins];
 
 	LocalAnalogConfig aconf;
 };
