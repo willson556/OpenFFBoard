@@ -52,6 +52,22 @@ T clip(T v, C l, C h)
   return { v > h ? h : v < l ? l : v };
 }
 
+template<class T>
+T sign(T v)
+{
+	if (v < 0)
+	{
+		return -1;
+	}
+
+	if (v > 0)
+	{
+		return 1;
+	}
+
+	return 0;
+}
+
 uint32_t micros(); // Returns microsecond scaled time
 
 void refreshWatchdog(); // Refreshes the watchdog

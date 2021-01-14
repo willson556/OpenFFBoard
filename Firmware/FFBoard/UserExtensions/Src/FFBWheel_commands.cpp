@@ -147,6 +147,12 @@ ParseStatus FFBWheel::command(ParsedCommand* cmd,std::string* reply){
 		}else if(cmd->type == CMDtype::set){
 			this->ffb->setFrictionStrength(cmd->val);
 		}
+	}else if(cmd->cmd == "damping"){
+		if(cmd->type == CMDtype::get){
+			*reply+=std::to_string(this->ffb->getDampingStrength());
+		}else if(cmd->type == CMDtype::set){
+			this->ffb->setDampingStrength(cmd->val);
+		}
 	}else if(cmd->cmd == "ffbfiltercf"){
 		if(cmd->type == CMDtype::get){
 			*reply+=std::to_string((int)this->ffb->getCfFilterFreq());

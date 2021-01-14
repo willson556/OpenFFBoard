@@ -28,6 +28,8 @@ public:
 	uint8_t getIdleSpringStrength();
 	void setFrictionStrength(uint8_t strength);
 	uint8_t getFrictionStrength();
+	void setDampingStrength(uint8_t strength);
+	uint8_t getDampingStrength();
 
 	uint32_t getRate(); // Returns an estimate of the hid effect update speed in hz
 	bool getFfbActive();
@@ -65,6 +67,8 @@ private:
 
 	uint8_t idlespringstregth = 127;
 	uint8_t frictionscale = 127;
+	uint8_t dampingscale = 127;
+	uint32_t frictionSpeedDeadband = 2;
 
 	uint8_t last_effect_id = 0;
 	uint16_t used_effects = 0;
@@ -80,7 +84,7 @@ private:
 
 	// Filters
 	float damper_f = 50 , damper_q = 0.2;
-	float friction_f = 50 , friction_q = 0.2;
+	float friction_f = 10.0f;
 	float inertia_f = 50 , inertia_q = 0.2;
 	uint32_t cfFilter_f = calcfrequency/2; // 500 = off
 	const float cfFilter_q = 0.8;

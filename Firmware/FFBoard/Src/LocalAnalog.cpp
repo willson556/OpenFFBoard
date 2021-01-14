@@ -19,7 +19,7 @@ LocalAnalog::LocalAnalog() {
 	restoreFlash();
 
 	for (int i=0; i < numPins; ++i) {
-		filters[i].setGain(0.01f);
+		filters[i].setFc(0.01f);
 	}
 }
 

@@ -332,32 +332,23 @@ float HidFFB::getCfFilterFreq(){
 }
 
 void HidFFB::set_filters(FFB_Effect* effect){
+	if(effect->filter != nullptr){
+		delete effect->filter;
+	}
+
 	switch(effect->type){
 		case FFB_EFFECT_DAMPER:
-			if(effect->filter != nullptr)
-				effect->filter->setBiquad(BiquadType::lowpass,(float)damper_f/(float)calcfrequency, damper_q, (float)0.0);
-			else
-				effect->filter = new Biquad(BiquadType::lowpass,(float)damper_f/(float)calcfrequency, damper_q, (float)0.0);
+			effect->filter = new Biquad(BiquadType::lowpass,(float)damper_f/(float)calcfrequency, damper_q, 0.0f);
 			break;
 		case FFB_EFFECT_FRICTION:
-			if(effect->filter != nullptr)
-				effect->filter->setBiquad(BiquadType::lowpass,(float)friction_f/(float)calcfrequency, friction_q, (float)0.0);
-			else
-				effect->filter = new Biquad(BiquadType::lowpass,(float)friction_f/(float)calcfrequency, friction_q, (float)0.0);
+			effect->filter = new ExponentialFilter(friction_f / calcfrequency);
 			break;
 		case FFB_EFFECT_INERTIA:
-			if(effect->filter != nullptr)
-				effect->filter->setBiquad(BiquadType::lowpass,(float)inertia_f/(float)calcfrequency, inertia_q, (float)0.0);
-			else
-				effect->filter = new Biquad(BiquadType::lowpass,(float)inertia_f/(float)calcfrequency, inertia_q, (float)0.0);
+			effect->filter = new Biquad(BiquadType::lowpass,(float)inertia_f/(float)calcfrequency, inertia_q, 0.0f);
 			break;
 		case FFB_EFFECT_CONSTANT:
-			if(effect->filter != nullptr)
-				effect->filter->setBiquad(BiquadType::lowpass,(float)cfFilter_f/(float)calcfrequency, cfFilter_q, (float)0.0);
-			else
-				effect->filter = new Biquad(BiquadType::lowpass,(float)cfFilter_f/(float)calcfrequency, cfFilter_q, (float)0.0);
+			effect->filter = new Biquad(BiquadType::lowpass,(float)cfFilter_f/(float)calcfrequency, cfFilter_q, 0.0f);
 			break;
-
 	}
 }
 
@@ -429,6 +420,13 @@ uint8_t HidFFB::getFrictionStrength(){
 	return this->frictionscale;
 }
 
+void HidFFB::setDampingStrength(uint8_t strength){
+	this->dampingscale = strength;
+}
+uint8_t HidFFB::getDampingStrength(){
+	return this->dampingscale;
+}
+
 /*
  * Calculates the resulting torque for FFB effects
  * Takes current position input scaled from -0x7fff to 0x7fff
@@ -467,7 +465,7 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 		}
 		case FFB_EFFECT_SPRING:
 		{
-			float scale = 0.0004f; // Tune for desired strength
+			float scale = 0.0007f; // Tune for desired strength
 
 			int32_t force = 0;
 
@@ -488,7 +486,7 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 
 			int32_t force =  ((effect->counter + effect->phase) % ((uint32_t)effect->period+2)) < (uint32_t)(effect->period+2)/2 ? -effect->magnitude : effect->magnitude;
 			force += effect->offset;
-			result_torque -= force;
+			result_torque -= force * 2;
 			break;
 		}
 		case FFB_EFFECT_SINE:
@@ -508,9 +506,7 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 			break;
 		}
 		case FFB_EFFECT_FRICTION:
-		case FFB_EFFECT_DAMPER:
 		{
-
 			int32_t force = 0;
 
 			if(effect->counter == 0){
@@ -520,15 +516,40 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 			int32_t speed = pos - effect->last_value;
 			effect->last_value = pos;
 
-			float val = effect->filter->process(speed) * 0.035f; // TODO tune friction
+			float val{effect->filter->process(sign(speed))};
 
 			// Only active outside deadband. Process filter always!
 			if(abs(pos-effect->offset) < effect->deadBand){
 				break;
 			}
+
 			// Calculate force
 			force = clip<int32_t,int32_t>((int32_t)((effect->positiveCoefficient) * val),-effect->negativeSaturation,effect->positiveSaturation);
 			force = (frictionscale * force) / 255;
+			result_torque -= force;
+			break;
+		}
+		case FFB_EFFECT_DAMPER:
+		{
+			int32_t force = 0;
+
+			if(effect->counter == 0){
+				effect->last_value = pos;
+				break;
+			}
+			int32_t speed = pos - effect->last_value;
+			effect->last_value = pos;
+
+			float speed_filtered = effect->filter->process(speed);
+
+			// Only active outside deadband. Process filter always!
+			if(abs(pos-effect->offset) < effect->deadBand){
+				break;
+			}
+
+			float val = speed_filtered * 0.035f;
+			force = clip<int32_t,int32_t>((int32_t)((effect->positiveCoefficient) * val),-effect->negativeSaturation,effect->positiveSaturation);
+			force = (dampingscale * force) / 255;
 			result_torque -= force;
 			break;
 		}

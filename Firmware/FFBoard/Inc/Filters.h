@@ -23,17 +23,20 @@ enum class BiquadType : uint8_t {
 
 class Filter{
 public:
+	virtual ~Filter() {}
+
 	virtual float process(float in) = 0;
+	virtual void setFc(float Fc) = 0;
 };
 
 class Biquad : public Filter{
 public:
 	Biquad();
     Biquad(BiquadType type, float Fc, float Q, float peakGainDB);
-    ~Biquad();
+    virtual ~Biquad() {}
     float process(float in) override;
     void setBiquad(BiquadType type, float Fc, float Q, float peakGain);
-    void setFc(float Fc); //frequency
+    void setFc(float Fc) override; //frequency
 
 protected:
     void calcBiquad(void);
@@ -46,23 +49,24 @@ protected:
 
 class ExponentialFilter : public Filter{
 public:
-	ExponentialFilter(float gain) : gain{gain} {}
-	ExponentialFilter() : gain{0.01f} {}
+	ExponentialFilter(float fc) : fc{fc} {}
+	ExponentialFilter() : fc{0.01f} {}
+	virtual ~ExponentialFilter() {}
 
 	float process(float in) override {
 		if (first) {
 			sum = in;
 			first = false;
 		} else {
-			sum += (in - sum) * gain;
+			sum += (in - sum) * fc;
 		}
 
 		return sum;
 	}
 
-	void setGain(float newGain) {
+	void setFc(float fc) override {
 		first = true;
-		gain = newGain;
+		this->fc = fc;
 	}
 
 	float getOutput() {
@@ -72,7 +76,7 @@ public:
 private:
 	float sum{0};
 	bool first{true};
-	float gain;
+	float fc;
 };
 
 

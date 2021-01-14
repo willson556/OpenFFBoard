@@ -17,9 +17,6 @@ Biquad::Biquad(BiquadType type, float Fc, float Q, float peakGainDB) {
     setBiquad(type, Fc, Q, peakGainDB);
 }
 
-Biquad::~Biquad() {
-}
-
 void Biquad::setFc(float Fc) {
 	Fc = clip<float,float>(Fc,0,0.5);
     this->Fc = Fc;

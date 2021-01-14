@@ -198,13 +198,14 @@ typedef struct
 	int16_t 	phase=0;
 	int16_t 	offset=0;	// Center point
 	int32_t 	last_value = 0;
-	Biquad* 	filter = nullptr;	// Optional filter pointer for friction effect
+	Filter* 	filter = nullptr;	// Optional filter pointer for friction effect
 	uint16_t 	counter=0;	// Elapsed time in ms
 	uint16_t 	period=0;
 	uint16_t 	duration=0,fadeTime=0,attackTime=0;	// Duration in ms
 	uint16_t 	samplePeriod = 0;
 	uint8_t 	axis = 0;	// Active axis
 	uint16_t	deadBand = 0;
+	//bool		activeLast=false;
 } FFB_Effect;
 
 
