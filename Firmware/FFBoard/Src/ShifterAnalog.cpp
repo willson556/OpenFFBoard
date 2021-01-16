@@ -234,7 +234,7 @@ ParseStatus ShifterAnalog::command(ParsedCommand* cmd,std::string* reply){
 
 ShifterAnalog::G27ShifterButtonClient::G27ShifterButtonClient(const OutputPin& csPin)
 	:config{csPin} {
-	config.peripheral.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+	config.peripheral.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
 	config.peripheral.FirstBit = SPI_FIRSTBIT_LSB;
 	config.peripheral.CLKPhase = SPI_PHASE_1EDGE;
 	config.peripheral.CLKPolarity = SPI_POLARITY_LOW;
