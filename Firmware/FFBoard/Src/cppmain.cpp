@@ -31,8 +31,6 @@ void cppmain() {
 
 	TIM_MICROS.Instance->CR1 = 1; // Enable microsecond clock
 
-	startADC(); // enable ADC DMA
-
 	// If switch pressed at boot select failsafe implementation
 	if(HAL_GPIO_ReadPin(BUTTON_A_GPIO_Port, BUTTON_A_Pin) == 1){
 		main_id = 0;
@@ -45,8 +43,8 @@ void cppmain() {
 	extern volatile char uart_buf[UART_BUF_SIZE];
 	HAL_UART_Receive_IT(&UART_PORT,(uint8_t*)uart_buf,1);
 
-
 	mainclass = mainchooser.Create(main_id);
+	startADC(); // enable ADC DMA
 	usb_init(&hUsbDeviceFS); // Init usb
 
 	while(running){
