@@ -203,14 +203,16 @@ void FFBWheel::update(){
 		if(usb_update_flag){
 
 			usb_update_flag = false;
-			effectTorque = ffb->calculateEffects(scaledEnc,1);
+			int32_t eTorque{ffb->calculateEffects(scaledEnc,1)};
 
 			if(abs(effectTorque) >= 0x7fff){
 				pulseClipLed();
 			}
 			// Scale for power and endstop margin
 			float effect_margin_scaler = ((float)fx_ratio_i/255.0);
-			effectTorque *= ((float)this->power / (float)0x7fff) * effect_margin_scaler;
+			eTorque *= ((float)this->power / (float)0x7fff) * effect_margin_scaler;
+			effectTorque = eTorque;
+
 			//Send usb gamepad report
 			if(++report_rate_cnt >= usb_report_rate){
 				report_rate_cnt = 0;

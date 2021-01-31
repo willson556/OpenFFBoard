@@ -8,10 +8,22 @@
 #ifndef HIDFFB_H_
 #define HIDFFB_H_
 
+#include <array>
+#include <string>
+
 #include <UsbHidHandler.h>
 #include "ffb_defs.h"
 #include "PersistentStorage.h"
 #include "Filters.h"
+
+struct EffectReport {
+	uint8_t type;
+	int32_t torque;
+
+	std::string to_string() const {
+		return std::to_string(type) + ',' + std::to_string(torque) + ';';
+	}
+};
 
 class HidFFB: public UsbHidHandler, PersistentStorage {
 public:
@@ -30,6 +42,8 @@ public:
 	uint8_t getFrictionStrength();
 	void setDampingStrength(uint8_t strength);
 	uint8_t getDampingStrength();
+
+	const std::array<EffectReport, MAX_EFFECTS>& getEffectReport(uint8_t axis, int &num_active);
 
 	uint32_t getRate(); // Returns an estimate of the hid effect update speed in hz
 	bool getFfbActive();
@@ -80,11 +94,13 @@ private:
 	reportFFB_status_t reportFFBStatus;
 	FFB_Effect effects[MAX_EFFECTS];
 
+	std::array<EffectReport, MAX_EFFECTS> effect_report;
+
 	uint32_t lastOut = 0;
 
 	// Filters
 	float damper_f = 50 , damper_q = 0.2;
-	float friction_f = 10.0f;
+	float friction_f = 20.0f;
 	float inertia_f = 50 , inertia_q = 0.2;
 	uint32_t cfFilter_f = calcfrequency/2; // 500 = off
 	const float cfFilter_q = 0.8;

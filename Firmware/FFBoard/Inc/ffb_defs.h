@@ -205,7 +205,7 @@ typedef struct
 	uint16_t 	samplePeriod = 0;
 	uint8_t 	axis = 0;	// Active axis
 	uint16_t	deadBand = 0;
-	//bool		activeLast=false;
+	int32_t     last_out = 0;
 } FFB_Effect;
 
 

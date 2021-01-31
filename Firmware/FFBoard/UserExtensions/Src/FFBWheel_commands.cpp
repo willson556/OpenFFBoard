@@ -201,8 +201,17 @@ ParseStatus FFBWheel::command(ParsedCommand* cmd,std::string* reply){
 		}else{
 			*reply+=std::to_string(ffb->getFfbActive() ? 1 : 0);
 		}
+	}else if (cmd->cmd == "effreport"){
+		if(cmd->type == CMDtype::get){
+			int active_effects;
+			auto report{ffb->getEffectReport(1, active_effects)};
 
+			*reply+= std::to_string(effectTorque) + ':';
 
+			for (int i = 0; i < active_effects; ++i){
+				*reply+= report[i].to_string();
+			}
+		}
 	}else if(cmd->cmd == "help"){
 		flag = ParseStatus::OK_CONTINUE;
 		*reply += "FFBWheel commands:\n"

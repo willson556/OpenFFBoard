@@ -460,6 +460,8 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 			if(cfFilter_f < calcfrequency/2){
 				f = effect->filter->process(f);
 			}
+
+			effect->last_out = -f;
 			result_torque -= f;
 			break;
 		}
@@ -477,16 +479,18 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 				}
 			}
 
+			effect->last_out = -force;
 			result_torque -= force;
 			break;
 		}
 
 		case FFB_EFFECT_SQUARE:
 		{
-
 			int32_t force =  ((effect->counter + effect->phase) % ((uint32_t)effect->period+2)) < (uint32_t)(effect->period+2)/2 ? -effect->magnitude : effect->magnitude;
 			force += effect->offset;
-			result_torque -= force * 2;
+
+			effect->last_out = -force;
+			result_torque -= force;
 			break;
 		}
 		case FFB_EFFECT_SINE:
@@ -497,6 +501,7 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 			float sine =  sinf(2.0*(float)M_PI*(t*freq+phase)) * effect->magnitude;
 			int32_t force = (int32_t)(effect->offset + sine);
 
+			effect->last_out = -force;
 			result_torque -= force;
 			break;
 		}
@@ -516,7 +521,7 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 			int32_t speed = pos - effect->last_value;
 			effect->last_value = pos;
 
-			float val{effect->filter->process(sign(speed))};
+			float val{sign(speed)};
 
 			// Only active outside deadband. Process filter always!
 			if(abs(pos-effect->offset) < effect->deadBand){
@@ -525,7 +530,9 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 
 			// Calculate force
 			force = clip<int32_t,int32_t>((int32_t)((effect->positiveCoefficient) * val),-effect->negativeSaturation,effect->positiveSaturation);
-			force = (frictionscale * force) / 255;
+			force = effect->filter->process((frictionscale * force) / 255);
+
+			effect->last_out = -force;
 			result_torque -= force;
 			break;
 		}
@@ -550,6 +557,8 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 			float val = speed_filtered * 0.035f;
 			force = clip<int32_t,int32_t>((int32_t)((effect->positiveCoefficient) * val),-effect->negativeSaturation,effect->positiveSaturation);
 			force = (dampingscale * force) / 255;
+
+			effect->last_out = -force;
 			result_torque -= force;
 			break;
 		}
@@ -568,4 +577,25 @@ int32_t HidFFB::calculateEffects(int32_t pos,uint8_t axis=1){
 
 
 	return result_torque; //clip(result_torque,-0x7fff,0x7fff);
+}
+
+const std::array<EffectReport, MAX_EFFECTS>& HidFFB::getEffectReport(uint8_t axis, int &num_active){
+	int report_index{0};
+
+	for (int i=0; i < MAX_EFFECTS; ++i) {
+		const auto& effect{effects[i]};
+
+		if(effect.state == 0 || !(axis & effect.axis))
+			continue;
+
+		auto& effect_report_element{effect_report[report_index]};
+		effect_report_element.type = effect.type;
+		effect_report_element.torque = effect.last_out;
+
+		++report_index;
+	}
+
+	num_active = report_index;
+
+	return effect_report;
 }
